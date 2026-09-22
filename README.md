@@ -1,6 +1,6 @@
-# Prinz homepage prototype
+# Prinz homepage
 
-Static, responsive homepage for prinzai.com, based on the approved visual concept.
+Static, responsive homepage for `prinzai.com`, based on the approved visual concept.
 
 ## Files
 
@@ -12,10 +12,10 @@ Static, responsive homepage for prinzai.com, based on the approved visual concep
 - `CNAME` and `.nojekyll`: GitHub Pages custom-domain deployment files.
 - `favicon.svg`, `robots.txt`, and `sitemap.xml`: lightweight browser and search metadata.
 
-## Domain and deployment plan
+## Domain and deployment
 
-The homepage is intended for the apex `https://prinzai.com/`, served by GitHub Pages. The existing Substack blog stays on `https://www.prinzai.com/`. All Blog links point to `www`; the history cards point to their `www` post URLs. The `404.html` redirect preserves old bare-domain Substack post links after the cutover.
+GitHub Pages publishes the `main` branch from the repository root with `prinzai.com` as its custom domain. Dynadot points the apex to GitHub Pages. The existing Substack blog stays on `https://www.prinzai.com/`; its `www` CNAME remains with Substack. All Blog links point to `www`, and the history cards link to their `www` post URLs. The `404.html` redirect preserves old bare-domain Substack post links.
 
-Before publishing, create or choose the GitHub Pages repository and put these files at the publishing root. In its **Settings → Pages** panel, set `prinzai.com` as the custom domain. Verify domain ownership with the GitHub TXT record if GitHub requests it. At the DNS provider, direct the apex to GitHub Pages using GitHub's current documented A/AAAA records while retaining the existing `www` record for Substack. Wait for the Pages DNS check to pass, then enable **Enforce HTTPS**. Confirm that `https://prinzai.com/` loads this page, `https://www.prinzai.com/` still loads the blog, and an old `https://prinzai.com/p/...` URL redirects to `www`.
+GitHub Pages redeploys when these files change. Check **Settings → Pages** for DNS verification and **Enforce HTTPS**. After DNS or hosting changes, confirm that `https://prinzai.com/` loads this page, `https://www.prinzai.com/` still loads the blog, and an old `https://prinzai.com/p/...` URL redirects to `www`.
 
-No build step is needed. Place these files at the static host root.
+No build step is needed.
