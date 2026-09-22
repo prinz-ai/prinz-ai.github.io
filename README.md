@@ -1,13 +1,15 @@
 # Prinz homepage
 
-Static, responsive homepage for `prinzai.com`, based on the approved visual concept.
+Static, responsive site for `prinzai.com`, with artwork inspired by the gold folding screen used in the owner's X banner.
 
 ## Files
 
-- `index.html`: semantic page content and destinations.
-- `styles.css`: desktop and mobile layout.
-- `assets/hero-mountains.png`: standalone transparent mountain artwork for the hero.
-- `assets/artwork-source.png`: concept artwork used only inside clipped inline SVG windows for the two history thumbnails. Page text and links are live HTML.
+- `index.html`: image-led homepage with links to the two sections.
+- `projects/index.html`: prinzbench and accelerando links.
+- `history-lab/index.html`: the two WWI cipher stories.
+- `styles.css`: desktop and mobile layout shared by all pages.
+- `assets/gold-screen.webp`, `assets/projects-art.webp`, `assets/history-art.webp`: illustrative artwork for the hero and section covers.
+- The two story thumbnails use different crops of `history-art.webp`.
 - `404.html`: redirects old bare-domain Substack URLs under `/p/` and `/t/`, plus `/about`, `/archive`, and `/subscribe`, to the same path on `www.prinzai.com`, preserving query and fragment.
 - `CNAME` and `.nojekyll`: GitHub Pages custom-domain deployment files.
 - `favicon.svg`, `robots.txt`, and `sitemap.xml`: lightweight browser and search metadata.
