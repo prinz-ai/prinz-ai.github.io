@@ -145,10 +145,10 @@ main,
 }
 .entry-card__label {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
-  min-height: 70px;
+  min-height: 94px;
   padding: 14px 2px 16px;
   border-bottom: 1px solid var(--line);
 }
@@ -156,7 +156,14 @@ main,
   margin: 0;
   font: 400 clamp(27px, 2vw, 33px)/1.1 var(--serif);
 }
+.entry-card__copy { min-width: 0; }
+.entry-card__copy p {
+  margin: 6px 0 0;
+  color: #45443e;
+  font: 400 13px/1.35 var(--sans);
+}
 .entry-card__label > span {
+  margin-top: 4px;
   color: #78602d;
   font: 23px/1 var(--serif);
   transition: transform .2s ease;
@@ -245,30 +252,9 @@ main,
   stroke-linecap: round;
 }
 .story-art {
-  position: relative;
   background-color: #6a5640;
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center;
 }
-.story-art--richi240 {
-  background-image: url("assets/richi-240-desk.webp");
-}
-.story-art--richi170 {
-  background-image: url("assets/richi-170-desk.webp");
-}
-.story-art__mat {
-  position: absolute;
-  top: 50%;
-  padding: clamp(5px, .8vw, 9px);
-  border: 1px solid #c7b99c;
-  background: #efe7d5;
-  box-shadow: 0 8px 19px rgba(17, 12, 7, .36);
-  transform: translateY(-50%);
-}
-.story-art--richi240 .story-art__mat { left: 6%; width: 82%; }
-.story-art--richi170 .story-art__mat { right: 5%; width: 82%; }
-.story-art__mat img { width: 100%; height: auto; object-fit: contain; }
+.story-art img { width: 100%; height: 100%; object-fit: cover; }
 .feature-card__text {
   display: flex;
   flex: 1;
@@ -318,7 +304,7 @@ main,
   .site-header__inner, main, .site-footer__inner { width: calc(100% - 40px); }
   .site-nav { gap: 20px; font-size: 14px; }
   .entry-grid, .feature-grid { gap: 24px; }
-  .entry-card__label { min-height: 65px; gap: 12px; padding: 12px 2px 14px; }
+  .entry-card__label { min-height: 90px; gap: 12px; padding: 12px 2px 14px; }
   .entry-card h2 { font-size: 25px; }
   .entry-card__label > span { font-size: 20px; }
   .feature-card__text { min-height: 145px; padding: 17px 2px 18px; }
@@ -346,15 +332,13 @@ main,
   .entry-grid, .feature-grid { grid-template-columns: 1fr; max-width: 520px; }
   .entry-grid { gap: 25px; margin: 25px auto 54px; }
   .entry-card__art { aspect-ratio: 1.65; }
-  .entry-card__label { min-height: 64px; }
+  .entry-card__label { min-height: 90px; }
   .entry-card h2 { font-size: 29px; }
   .interior-banner { height: clamp(220px, 60vw, 330px); margin-top: 14px; }
   .page-titlebar { max-width: 520px; margin: 36px auto 22px; padding-bottom: 15px; }
   .page-titlebar h1 { font-size: clamp(43px, 11vw, 60px); }
   .feature-grid { gap: 36px; margin: 0 auto 60px; }
   .project-visual, .story-art { aspect-ratio: 1.65; }
-  .story-art--richi240 .story-art__mat { left: 4%; width: 88%; }
-  .story-art--richi170 .story-art__mat { right: 4%; width: 88%; }
   .feature-card__text { min-height: 140px; }
   .feature-card h2 { font-size: 31px; }
   .feature-card__action { padding-top: 19px; }
