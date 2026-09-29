@@ -4,7 +4,40 @@
   const core=window.DesportesReader,{esc}=core,BASE='/desportes-1593/',KEY='https://cryptiana.web.fc2.com/code/mayenne.htm#:~:text=Reconstructed%20Cipher';
   const $=s=>document.querySelector(s),asset=s=>BASE+s;
   const letter=$('#letter'),panel=$('#context'),body=$('#context-body');
+  const magnifyButton=$('#magnify'),lens=$('#magnifier'),lensSvg=lens.querySelector('svg'),lensImage=lens.querySelector('image');
+  let magnify=false,magnifyFrame=0,magnifyPoint=null;
+  try{magnify=localStorage.getItem('desportes-magnifier')==='on';}catch(e){}
+  magnifyButton.setAttribute('aria-checked',String(magnify));
   let data,model,notes,idx,english,englishMarkup,view='source',open=new Set(),frenchLines=new Set(),selected=null,lastTrigger=null,closingOpen=false;
+  function hideMagnifier(){cancelAnimationFrame(magnifyFrame);magnifyFrame=0;magnifyPoint=null;lens.hidden=true;}
+  function toggleMagnifier(){
+    magnify=!magnify;magnifyButton.setAttribute('aria-checked',String(magnify));hideMagnifier();
+    try{localStorage.setItem('desportes-magnifier',magnify?'on':'off');}catch(e){}
+    $('#status').textContent=`Magnifier ${magnify?'on. Hover over the manuscript to zoom.':'off.'}`;
+  }
+  function drawMagnifier(){
+    magnifyFrame=0;if(!magnifyPoint)return;
+    const {tile,x,y}=magnifyPoint,source=tile.querySelector('svg'),matrix=source?.getScreenCTM();
+    if(!matrix||!tile.isConnected){hideMagnifier();return;}
+    // Map the cursor back to the original scan, including page zoom and horizontal scrolling.
+    const point=new DOMPoint(x,y).matrixTransform(matrix.inverse()),scale=Math.hypot(matrix.a,matrix.b);
+    const size=Math.min(216,innerWidth-24,innerHeight-24),span=(size-2)/(3*scale),original=source.querySelector('image');
+    for(const name of ['href','width','height'])if(lensImage.getAttribute(name)!==original.getAttribute(name))lensImage.setAttribute(name,original.getAttribute(name));
+    lensSvg.setAttribute('viewBox',`${point.x-span/2} ${point.y-span/2} ${span} ${span}`);
+    const left=x+24+size<=innerWidth-12?x+24:x-size-24;
+    lens.style.width=lens.style.height=size+'px';
+    lens.style.left=Math.max(12,Math.min(innerWidth-size-12,left))+'px';
+    lens.style.top=Math.max(12,Math.min(innerHeight-size-12,y-size/2))+'px';
+    lens.hidden=false;
+  }
+  document.addEventListener('pointermove',e=>{
+    const tile=e.target.closest('.manuscript-tile');
+    if(!magnify||view!=='source'||e.pointerType==='touch'||e.buttons||!tile||!letter.contains(tile)){hideMagnifier();return;}
+    magnifyPoint={tile,x:e.clientX,y:e.clientY};if(!magnifyFrame)magnifyFrame=requestAnimationFrame(drawMagnifier);
+  },{passive:true});
+  document.addEventListener('pointerout',e=>{if(!e.relatedTarget)hideMagnifier();});
+  document.addEventListener('scroll',hideMagnifier,{capture:true,passive:true});
+  window.addEventListener('blur',hideMagnifier);window.addEventListener('resize',hideMagnifier);
   const folioLabel=f=>f.replace('f','f. '),lineLabel=r=>`${folioLabel(r.folio)} · ${r.number}`;
   const sourceLink=r=>`<a class="source-cite" href="${esc(data.sources[r.folio].url)}" target="_blank" rel="noopener noreferrer">${esc(data.sources[r.folio].title)} · line ${r.number} ↗</a>`;
   function svg(f,box,label){const s=data.sources[f];return `<svg viewBox="${box[0]} ${box[1]} ${box[2]-box[0]} ${box[3]-box[1]}" role="img" aria-label="${esc(label)}"><image href="${asset(s.image)}" width="${s.size[0]}" height="${s.size[1]}"/></svg>`;}
@@ -58,7 +91,7 @@
   function refreshReveals(){if(!idx)return;for(const r of idx.rows.values())refreshRow(r);$('#close-words').hidden=view!=='source'||(!open.size&&!closingOpen);}
   function setView(next){
     if(!['source','french','english'].includes(next))next='source';
-    view=next;closePanel(false);document.querySelectorAll('[data-view]').forEach(b=>{b.setAttribute('aria-selected',String(b.dataset.view===view));b.tabIndex=b.dataset.view===view?0:-1;});
+    view=next;hideMagnifier();magnifyButton.hidden=view!=='source';closePanel(false);document.querySelectorAll('[data-view]').forEach(b=>{b.setAttribute('aria-selected',String(b.dataset.view===view));b.tabIndex=b.dataset.view===view?0:-1;});
     letter.setAttribute('aria-labelledby','tab-'+view);$('#key-button').hidden=view!=='source';render();
     const url=new URL(location);url.searchParams.set('view',view);history.replaceState(null,'',url);$('#status').textContent=`${view==='source'?'Original':view==='french'?'French':'English'} view.`;
   }
@@ -110,6 +143,7 @@
     else if(b.dataset.line)showLine(b.dataset.line);
     else if(b.dataset.closing!==undefined)showClosing();
     else if(b.id==='close-context')closePanel();
+    else if(b.id==='magnify')toggleMagnifier();
     else if(b.id==='close-words'){open.clear();closingOpen=false;closePanel(false);render();}
     else if(b.dataset.general==='key')showKey();
     else if(b.dataset.general==='editorial')showNotes(['editorial']);
@@ -122,7 +156,7 @@
     if(!next)return;const target=document.querySelector(`[data-unit="${next.id}"]`);b.tabIndex=-1;target.tabIndex=0;target.focus();
   });
   $('.tabs').addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const tabs=[...document.querySelectorAll('[data-view]')],i=tabs.indexOf(document.activeElement),next=e.key==='Home'?0:e.key==='End'?2:(i+(e.key==='ArrowLeft'?-1:1)+3)%3;setView(tabs[next].dataset.view);tabs[next].focus();});
-  let resizeFrame;new ResizeObserver(()=>{cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(refreshReveals);}).observe(letter);
+  let resizeFrame;new ResizeObserver(()=>{hideMagnifier();cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(refreshReveals);}).observe(letter);
   async function load(name){const response=await fetch(name,{cache:'no-cache'});if(!response.ok)throw new Error(name+' '+response.status);return response.json();}
   Promise.all([load('edition.json'),load('reader.json'),load('../reader-notes.json'),load('english-lines.json')]).then(values=>{
     [data,model,notes,english]=values;idx=core.index(data,model);englishMarkup=core.annotateEnglishLines(english.rows,notes);setView(new URL(location).searchParams.get('view')||'source');
