@@ -8,7 +8,7 @@
   let magnify=false,magnifyFrame=0,magnifyPoint=null;
   try{magnify=localStorage.getItem('desportes-magnifier')==='on';}catch(e){}
   magnifyButton.setAttribute('aria-checked',String(magnify));
-  let data,model,notes,idx,english,englishMarkup,view='source',open=new Set(),frenchLines=new Set(),selected=null,lastTrigger=null,closingOpen=false;
+  let data,model,notes,idx,english,englishMarkup,wordSigns,omittedUnits=new Set(),view='source',open=new Set(),frenchLines=new Set(),selected=null,lastTrigger=null,closingOpen=false;
   function hideMagnifier(){cancelAnimationFrame(magnifyFrame);magnifyFrame=0;magnifyPoint=null;lens.hidden=true;}
   function toggleMagnifier(){
     magnify=!magnify;magnifyButton.setAttribute('aria-checked',String(magnify));hideMagnifier();
@@ -81,7 +81,7 @@
       const cells=g.units.map(u=>{
         const left=x(u),values=u.kind==='cipher'&&u.alternatives.length?u.alternatives:[shortReading(u)];
         const neighbours=r.units.filter(v=>v!==u).map(v=>Math.abs(x(v)-left)),gap=Math.min(...neighbours,16),font=Math.min(16,Math.max(7,gap*1.18));
-        return values.map((value,j)=>{const chosen=values.length===1||value===u.reading,y=values.length===1?53:31+j*24;if(chosen&&u.kind==='cipher')points.push(`${left},${y+10}`);const extra=value.length>2?' compact':'';return `<button class="word-choice${chosen?' chosen':''}${extra}${u.kind==='editorial'||u.kind==='open'?' supplied':''}${value==='∅'?' omitted':''}" data-toggle-word="${g.id}" style="left:${left}px;top:${y}px;${value.length===1?'font-size:'+font+'px;':''}" aria-label="${esc(value)}${chosen?', selected reading':''}; close ${esc(g.name)}">${esc(value)}</button>`;}).join('');
+        return values.map((value,j)=>{const chosen=values.length===1||value===u.reading,omitted=omittedUnits.has(r.id+':'+u.position),y=values.length===1?53:31+j*24;if(chosen&&u.kind==='cipher'&&!omitted)points.push(`${left},${y+10}`);const extra=value.length>2?' compact':'';return `<button class="word-choice${chosen?' chosen':''}${extra}${u.kind==='editorial'||u.kind==='open'?' supplied':''}${value==='∅'?' omitted':''}${chosen&&omitted?' editorial-omission':''}" data-toggle-word="${g.id}" style="left:${left}px;top:${y}px;${value.length===1?'font-size:'+font+'px;':''}" ${omitted?'title="Intact source letters; omitted editorially as a repeated beginning"':''} aria-label="${esc(value)}${chosen?(omitted?', source reading, omitted editorially':', selected reading'):''}; close ${esc(g.name)}">${esc(value)}</button>`;}).join('');
       }).join('');
       const title=g.units.length===1&&g.units[0].wordTarget?'':`<button class="word-name" data-toggle-word="${g.id}" style="left:${g.titleX}px;max-width:${g.width}px;font-size:${g.font}px" title="${esc(g.name)} · close this word">${esc(g.name)}</button>`;
       return `<div class="word-reveal" data-revealed-word="${g.id}" style="top:0">${title}<svg class="reading-path" viewBox="0 0 ${width} 87" aria-hidden="true"><polyline points="${points.join(' ')}"/></svg>${cells}</div>`;
@@ -110,8 +110,9 @@
     if(u.kind==='cancelled'||u.kind==='apparatus')return '<p>Cancelled or surplus ink, retained in the manuscript and omitted from the running reading.</p>';
     if(u.kind==='punctuation')return '<p>A manuscript mark; no alphabetic reading is assigned.</p>';
     if(u.kind==='editorial'||u.kind==='open')return `<p>${esc(u.reading)}.</p>`;
-    const keyWord=['QUE','QUI','POUR'].includes(u.reading);
-    return `<p>${u.kind==='abbreviation'?'An expanded abbreviation':u.kind==='number'?'Numerical notation':'A word or title code'}: <strong>${esc(shortReading(u))}</strong>.</p>${keyWord?`<figure><img src="${asset('assets/evidence/tomokiyo-key.png')}" alt="Tomokiyo’s published alphabet and QUE, QUI, POUR signs"></figure><div class="context-cites"><a href="${KEY}" target="_blank" rel="noopener noreferrer">S. Tomokiyo · “Reconstructed Cipher,” ${esc(u.reading)} entry ↗</a></div>`:''}`;
+    const evidence=wordSigns[u.reading];if(!evidence)return `<p>${esc(shortReading(u))}</p>`;
+    const pieces=item.word.units.map(id=>idx.units.get(id).unit),breakdown=u.kind==='code'&&pieces.length>1&&pieces.every(p=>['code','cipher'].includes(p.kind))?`<p class="word-breakdown">${pieces.map(p=>esc(shortReading(p))).join(' + ')} → <strong>${esc(item.word.text)}</strong></p>`:'';
+    return `<div class="glyph-comparison"><figure>${sample}<figcaption>Selected manuscript sign</figcaption></figure></div>${breakdown}<h3>${esc(evidence.title)}</h3><p>${esc(evidence.body)}</p><div class="symbol-examples${evidence.compact?' compact-examples':''}">${evidence.images.map(im=>`<figure><a href="${asset(im.image)}" target="_blank" rel="noopener"><img src="${asset(im.image)}" alt="${esc(im.caption)}" loading="lazy"></a><figcaption><a href="${esc(im.url)}" target="_blank" rel="noopener noreferrer">${esc(im.caption)} ↗</a></figcaption></figure>`).join('')}</div><div class="context-cites">${evidence.refs.map(ref=>`<a href="${esc(ref.url)}" target="_blank" rel="noopener noreferrer">${esc(ref.label)} ↗</a>`).join('')}</div>`;
   }
   function selectUnit(id,forceOpen=false,forceClose=false){const item=idx.units.get(id);if(!item)return;const w=item.word;
     const tile=document.getElementById(item.row.id)?.querySelector('.manuscript-tile'),before=tile?.getBoundingClientRect().top;
@@ -135,7 +136,7 @@
     $('#status').textContent=`French ${id==='closing'?'closing':'line'} ${text.hidden?'hidden':'shown'}.`;
   }
   function showClosing(){closingOpen=!closingOpen;if(view==='source'){const old=document.getElementById('closing');old.outerHTML=closing();$('#close-words').hidden=!open.size&&!closingOpen;}if(closingOpen||view!=='source'){showNotes(['closing','dates']);body.insertAdjacentHTML('beforeend',lineSpellings(data.closing.folio+'-closing'));}else closePanel(false);}
-  function showKey(){openPanel('The cipher',`<h2>One sign, two letters.</h2><figure><a href="${asset('assets/evidence/tomokiyo-key.png')}" target="_blank" rel="noopener"><img src="${asset('assets/evidence/tomokiyo-key.png')}" alt="S. Tomokiyo’s reconstructed cipher table"></a></figure><p>French context selects a letter from each pair. The glowing path shows the choices made in this edition.</p><div class="context-cites"><a href="${KEY}" target="_blank" rel="noopener noreferrer">S. Tomokiyo (2017), “Reconstructed Cipher” · unpaginated table ↗</a></div>`);}
+  function showKey(){openPanel('The cipher',`<h2>One sign, two letters.</h2><figure><a href="${asset('assets/evidence/tomokiyo-key.png')}" target="_blank" rel="noopener"><img src="${asset('assets/evidence/tomokiyo-key.png')}" alt="S. Tomokiyo’s reconstructed cipher table"></a></figure><p>French context selects a letter from each pair. The glowing path shows the choices made in this edition.</p><p>The table also supplies QUE, QUI and POUR. Other word signs and abbreviations have their own manuscript comparisons, shown when selected.</p><div class="context-cites"><a href="${KEY}" target="_blank" rel="noopener noreferrer">S. Tomokiyo (2017), “Reconstructed Cipher” · unpaginated table ↗</a></div>`);}
   document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!idx)return;
     if(b.dataset.view)setView(b.dataset.view);
     else if(b.dataset.frenchLine)toggleFrench(b.dataset.frenchLine,b);
@@ -160,8 +161,8 @@
   $('.tabs').addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const tabs=[...document.querySelectorAll('[data-view]')],i=tabs.indexOf(document.activeElement),next=e.key==='Home'?0:e.key==='End'?2:(i+(e.key==='ArrowLeft'?-1:1)+3)%3;setView(tabs[next].dataset.view);tabs[next].focus();});
   let resizeFrame;new ResizeObserver(()=>{hideMagnifier();cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(refreshReveals);}).observe(letter);
   async function load(name){const response=await fetch(name,{cache:'no-cache'});if(!response.ok)throw new Error(name+' '+response.status);return response.json();}
-  Promise.all([load('edition.json'),load('reader.json'),load('../reader-notes.json'),load('english-lines.json')]).then(values=>{
-    [data,model,notes,english]=values;idx=core.index(data,model);englishMarkup=core.annotateEnglishLines(english.rows,notes);setView(new URL(location).searchParams.get('view')||'source');
+  Promise.all([load('edition.json'),load('reader.json'),load('../reader-notes.json'),load('english-lines.json'),load('../word-signs.json')]).then(values=>{
+    [data,model,notes,english,wordSigns]=values;omittedUnits=new Set(notes.flatMap(n=>n.omittedUnits||[]));idx=core.index(data,model);englishMarkup=core.annotateEnglishLines(english.rows,notes);setView(new URL(location).searchParams.get('view')||'source');
     let anchor='';try{anchor=decodeURIComponent(location.hash.slice(1));}catch(e){}
     if(view==='source'&&idx.words.has(anchor)){const w=idx.words.get(anchor);selectUnit(w.units[0],true);document.getElementById(w.rows[0])?.scrollIntoView({block:'center'});}
     else if(idx.rows.has(anchor))document.getElementById(anchor)?.scrollIntoView({block:'center'});
