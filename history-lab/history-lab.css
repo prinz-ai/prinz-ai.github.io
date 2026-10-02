@@ -1,19 +1,25 @@
 .history-index-page .interior-banner { height: clamp(170px, 19vw, 240px); }
-.history-index-page .page-titlebar { margin-top: 40px; margin-bottom: 0; }
-.history-index { max-width: 1160px; margin: 0 auto 90px; }
-.history-index a { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 29px 2px; border-bottom: 1px solid var(--line); }
-.history-index h2 { margin: 0; font: 400 clamp(27px, 2.8vw, 36px)/1.2 var(--serif); letter-spacing: -.025em; }
-.history-index a > span { flex: none; color: #78602d; font: 24px/1 var(--sans); }
-.history-index a:hover h2 { color: #6c5628; }
+.history-index-page .page-titlebar { margin-top: 40px; margin-bottom: 27px; }
+.history-index { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px; max-width: 1160px; margin: 0 auto 90px; }
+.history-card { display: flex; flex-direction: column; min-width: 0; }
+.history-card__art { overflow: hidden; aspect-ratio: 1.82; border: 1px solid var(--line); background: #d6c7a0; transition: border-color .22s ease, box-shadow .22s ease; }
+.history-card__art img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; }
+.history-card__label { display: flex; flex: 1; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 19px 2px; border-bottom: 1px solid var(--line); }
+.history-card h2 { margin: 0; font: 400 clamp(27px, 2.45vw, 36px)/1.15 var(--serif); letter-spacing: -.025em; }
+.history-card__label > span { flex: none; color: #78602d; font: 23px/1 var(--sans); margin-top: 4px; }
+.history-card:hover h2 { color: #6c5628; }
+.history-card:hover .history-card__art { border-color: #ae945c; box-shadow: 0 9px 24px rgba(52, 44, 29, .11); }
+.history-card:hover img { transform: scale(1.012); }
 .history-back { display: inline-block; margin-bottom: 22px; color: #695226; font: 13px/1.5 var(--sans); }
 .history-back:hover { text-decoration: underline; text-underline-offset: 4px; }
 .history-collection .page-titlebar { margin-top: 54px; }
 .history-collection .page-titlebar h1 { font-size: clamp(38px, 4.7vw, 62px); }
 @media (max-width: 650px) {
   .history-index-page .page-titlebar { margin-top: 30px; }
-  .history-index { margin-bottom: 60px; }
-  .history-index a { padding: 25px 2px; gap: 20px; }
-  .history-index h2 { font-size: 28px; }
+  .history-index { grid-template-columns: 1fr; gap: 30px; max-width: 520px; margin-bottom: 60px; }
+  .history-card__art { aspect-ratio: 1.65; }
+  .history-card__label { padding: 17px 2px; }
+  .history-card h2 { font-size: 31px; }
   .history-collection .page-titlebar { margin-top: 32px; }
   .history-collection .page-titlebar h1 { font-size: 43px; }
   .history-back { margin-bottom: 18px; }
