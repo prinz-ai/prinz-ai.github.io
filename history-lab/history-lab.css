@@ -1,0 +1,20 @@
+.history-index-page .interior-banner { height: clamp(170px, 19vw, 240px); }
+.history-index-page .page-titlebar { margin-top: 40px; margin-bottom: 0; }
+.history-index { max-width: 1160px; margin: 0 auto 90px; }
+.history-index a { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 29px 2px; border-bottom: 1px solid var(--line); }
+.history-index h2 { margin: 0; font: 400 clamp(27px, 2.8vw, 36px)/1.2 var(--serif); letter-spacing: -.025em; }
+.history-index a > span { flex: none; color: #78602d; font: 24px/1 var(--sans); }
+.history-index a:hover h2 { color: #6c5628; }
+.history-back { display: inline-block; margin-bottom: 22px; color: #695226; font: 13px/1.5 var(--sans); }
+.history-back:hover { text-decoration: underline; text-underline-offset: 4px; }
+.history-collection .page-titlebar { margin-top: 54px; }
+.history-collection .page-titlebar h1 { font-size: clamp(38px, 4.7vw, 62px); }
+@media (max-width: 650px) {
+  .history-index-page .page-titlebar { margin-top: 30px; }
+  .history-index { margin-bottom: 60px; }
+  .history-index a { padding: 25px 2px; gap: 20px; }
+  .history-index h2 { font-size: 28px; }
+  .history-collection .page-titlebar { margin-top: 32px; }
+  .history-collection .page-titlebar h1 { font-size: 43px; }
+  .history-back { margin-bottom: 18px; }
+}

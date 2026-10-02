@@ -6,7 +6,10 @@ Static, responsive site for `prinzai.com`, with artwork inspired by the gold fol
 
 - `index.html`: image-led homepage with links to the two sections.
 - `projects/index.html`: prinzbench and accelerando links.
-- `history-lab/index.html`: the two WWI cipher stories.
+- `history-lab/index.html`: the two History Lab collections, WWI German Radio Messages and The Catholic League Letters (1593).
+- `history-lab/wwi-german-radio-messages/index.html`: the existing RICHI-240 and RICHI-170 story links.
+- `history-lab/history-lab.css`: restrained collection navigation and responsive layout for History Lab.
+- `desportes-1593/index.html`: the Catholic League letters, with links to the Frachetta and Aldobrandini readers.
 - `styles.css`: desktop and mobile layout shared by all pages.
 - `assets/gold-screen.webp`, `assets/projects-art.webp`, `assets/history-art.webp`: illustrative artwork for the hero and section covers.
 - The two story thumbnails use different crops of `history-art.webp`.
