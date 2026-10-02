@@ -23,7 +23,7 @@
     let offset=0;const spans=rows.map(r=>{const s={...r,start:offset,end:offset+r.text.length};offset=s.end+1;return s;});
     const matches=ranges(rows.map(r=>r.text).join(' '),rows.map(r=>r.id),'en',notes,spans).map(m=>({...m,rows:spans.filter(s=>s.start<m.end&&s.end>m.start).map(s=>s.id)}));
     return new Map(spans.map(s=>{
-      let at=0,html='';for(const m of matches){if(m.start>=s.end||m.end<=s.start)continue;const a=Math.max(0,m.start-s.start),b=Math.min(s.text.length,m.end-s.start);html+=esc(s.text.slice(at,a))+`<button class="text-note" data-notes="${esc(m.ids.join(','))}" data-rows="${esc(m.rows.join(','))}">${esc(s.text.slice(a,b))}</button>`;at=b;}
+      let at=0,html='';for(const m of matches){if(m.start>=s.end||m.end<=s.start)continue;const a=Math.max(0,m.start-s.start);let b=Math.min(s.text.length,m.end-s.start);b+=(s.text.slice(b).match(/^[.,;:!?…]+/)||[''])[0].length;html+=esc(s.text.slice(at,a))+`<button class="text-note" data-notes="${esc(m.ids.join(','))}" data-rows="${esc(m.rows.join(','))}">${esc(s.text.slice(a,b))}</button>`;at=b;}
       return [s.id,html+esc(s.text.slice(at))];
     }));
   }
