@@ -8,7 +8,7 @@
   let magnify=false,magnifyFrame=0,magnifyPoint=null;
   try{magnify=localStorage.getItem('desportes-magnifier')==='on';}catch(e){}
   magnifyButton.setAttribute('aria-checked',String(magnify));
-  let data,model,notes,idx,english,englishMarkup,wordSigns,omittedUnits=new Set(),view='source',open=new Set(),frenchLines=new Set(),selected=null,lastTrigger=null,closingOpen=false;
+  let data,model,notes,idx,english,englishNotes,englishMarkup,wordSigns,omittedUnits=new Set(),view='source',open=new Set(),frenchLines=new Set(),selected=null,lastTrigger=null,closingOpen=false;
   function hideMagnifier(){cancelAnimationFrame(magnifyFrame);magnifyFrame=0;magnifyPoint=null;lens.hidden=true;}
   function toggleMagnifier(){
     magnify=!magnify;magnifyButton.setAttribute('aria-checked',String(magnify));hideMagnifier();
@@ -41,17 +41,20 @@
   const folioLabel=f=>f.replace('f','f. '),lineLabel=r=>`${folioLabel(r.folio)} · ${r.number}`;
   const sourceLink=r=>`<a class="source-cite" href="${esc(data.sources[r.folio].url)}" target="_blank" rel="noopener noreferrer">${esc(data.sources[r.folio].title)} · line ${r.number} ↗</a>`;
   function svg(f,box,label){const s=data.sources[f];return `<svg viewBox="${box[0]} ${box[1]} ${box[2]-box[0]} ${box[3]-box[1]}" role="img" aria-label="${esc(label)}"><image href="${asset(s.image)}" width="${s.size[0]}" height="${s.size[1]}"/></svg>`;}
-  function lineNumber(r,first=false){return `<button class="line-label" data-line="${r.id}" aria-label="${esc(lineLabel(r))}: source and reading">${first?`<span class="folio-label">${r.folio.replace('f','')}${r.folio.endsWith('v')?'':'r'}</span>`:''}${String(r.number).padStart(2,'0')}</button>`;}
+  function lineNumber(r,first=false){const label=`${first?`<span class="folio-label">${r.folio.replace('f','')}${r.folio.endsWith('v')?'':'r'}</span>`:''}${String(r.number).padStart(2,'0')}`;return view==='english'?`<span class="line-label">${label}</span>`:`<button class="line-label" data-line="${r.id}" aria-label="${esc(lineLabel(r))}: source and reading">${label}</button>`;}
   function frenchToggle(id,label){return `<button class="line-french-toggle" data-french-line="${id}" aria-label="French translation: ${esc(label)}" title="Show or hide this line in French" aria-expanded="${frenchLines.has(id)}" aria-controls="french-${id}">fr</button>`;}
   function frenchLine(id,text,rows){return `<p class="line-french" id="french-${id}" lang="fr" ${frenchLines.has(id)?'':'hidden'}>${core.annotate(text,rows,'fr',notes)}</p>`;}
   function sourceRow(r,first){const b=r.displayBox,w=b[2]-b[0],h=b[3]-b[1];return `<article class="source-row" id="${r.id}"><div class="source-gutter">${lineNumber(r,first)}${frenchToggle(r.id,lineLabel(r))}</div><div class="line-surface">${frenchLine(r.id,r.french,[r.id])}<div class="reveal-space" id="reveal-${r.id}"></div><div class="manuscript-tile">${svg(r.folio,b,'Original manuscript, '+lineLabel(r))}${r.units.map((u,i)=>{const id=r.id+':'+u.position,word=idx.units.get(id).word,y=Math.max(b[1],u.box[1]),end=Math.min(b[3],u.box[3]);return `<button class="source-hit" data-unit="${id}" data-word="${word.id}" tabindex="${i===0?'0':'-1'}" aria-label="${esc(lineLabel(r))}, ${u.wordTarget?'handwritten word':'symbol'} ${i+1}: open word" aria-expanded="${open.has(word.id)}" aria-controls="reveal-${r.id} context" style="left:${100*(u.box[0]-b[0])/w}%;width:${100*(u.box[2]-u.box[0])/w}%;top:${100*(y-b[1])/h}%;height:${100*Math.max(1,end-y)/h}%"></button>`;}).join('')}</div></div></article>`;}
   function closing(){const c=data.closing,b=model.closingBox;
+    if(view==='english'){const text=english.closing.replace(' [Subscription flourish; no alphabetic expansion assigned.]','');return `<article class="text-row translation-closing"><span class="line-label">fin</span><p lang="en">${core.annotate(text,[c.folio+'-closing'],'en',englishNotes)}</p></article>`;}
     if(view!=='source')return `<article class="text-row translation-closing"><button class="line-label" data-closing="true" aria-label="Closing notes">fin</button><p lang="${view==='french'?'fr':'en'}">${core.annotate(view==='english'?english.closing:c.french,[c.folio+'-closing'],view==='french'?'fr':'en',notes)}</p></article>`;
     return `<article class="source-row closing-row" id="closing"><div class="source-gutter"><button class="line-label" data-closing="true" aria-label="Open the closing">fin</button>${frenchToggle('closing','closing')}</div><div class="line-surface">${frenchLine('closing',c.french,[c.folio+'-closing'])}<div class="closing-reveal" ${closingOpen?'':'hidden'}><button data-closing="true" lang="fr">${esc(c.original)}</button></div><div class="manuscript-tile">${svg(c.folio,b,'Original manuscript closing')}${c.regions.map((u,i)=>{const x=c.box[0]+u.box[0],y=c.box[1]+u.box[1];return `<button class="source-hit" data-closing="${i}" aria-label="Open closing region ${i+1}" aria-expanded="${closingOpen}" style="left:${100*(x-b[0])/(b[2]-b[0])}%;top:${100*(y-b[1])/(b[3]-b[1])}%;width:${100*(u.box[2]-u.box[0])/(b[2]-b[0])}%;height:${100*(u.box[3]-u.box[1])/(b[3]-b[1])}%"></button>`;}).join('')}</div></div></article>`;
   }
   function render(){
     letter.classList.toggle('source-view',view==='source');
     document.body.classList.toggle('reading-source',view==='source');
+    document.body.classList.toggle('reading-english',view==='english');
+    $('.letter-heading h1').innerHTML=view==='english'?core.annotate(data.title,['heading'],'en',englishNotes):esc(data.title);
     letter.innerHTML=data.folios.map(f=>`<section class="folio" aria-label="${esc(data.sources[f].title)}">${[...idx.rows.values()].filter(r=>r.folio===f).map((r,i)=>view==='source'?sourceRow(r,i===0):`<article class="text-row${view==='english'?' english-row':''}" id="${r.id}">${lineNumber(r,i===0)}<p lang="${view==='english'?'en':'fr'}">${view==='english'?englishMarkup.get(r.id):core.annotate(r.french,[r.id],'fr',notes)}</p></article>`).join('')}${f===data.closing.folio?closing():''}</section>`).join('');
     refreshReveals();
   }
@@ -92,14 +95,14 @@
   function setView(next){
     if(!['source','french','english'].includes(next))next='source';
     view=next;hideMagnifier();magnifyButton.hidden=view!=='source';closePanel(false);document.querySelectorAll('[data-view]').forEach(b=>{b.setAttribute('aria-selected',String(b.dataset.view===view));b.tabIndex=b.dataset.view===view?0:-1;});
-    letter.setAttribute('aria-labelledby','tab-'+view);$('#key-button').hidden=view!=='source';render();
+    letter.setAttribute('aria-labelledby','tab-'+view);$('#key-button').hidden=view!=='source';$('.info-button').hidden=view==='english';render();
     const url=new URL(location);url.searchParams.set('view',view);history.replaceState(null,'',url);$('#status').textContent=`${view==='source'?'Original':view==='french'?'French':'English'} view.`;
   }
   function openPanel(label,html,trigger){
     lastTrigger=trigger||document.activeElement;$('#context-location').textContent=label;body.innerHTML=html;panel.hidden=false;document.body.classList.add('panel-open');panel.scrollTop=0;requestAnimationFrame(refreshReveals);
   }
   function closePanel(focus=true){panel.hidden=true;document.body.classList.remove('panel-open');document.querySelectorAll('.text-note.active').forEach(n=>n.classList.remove('active'));if(focus&&lastTrigger?.isConnected)lastTrigger.focus({preventScroll:true});requestAnimationFrame(refreshReveals);}
-  function noteHTML(n,original=false){return `<section class="context-note" data-context-note="${n.id}"><h3>${esc(n.title)}</h3><p>${esc(n.body)}</p>${original&&n.cipher?`<p>${esc(n.cipher)}</p>`:''}${n.images.filter(im=>original||!im.cipherOnly).map(im=>`<figure><a href="${asset(im.image)}" target="_blank" rel="noopener"><img src="${asset(im.image)}" alt="${esc(im.caption)}" loading="lazy"></a><figcaption>${esc(im.caption)}</figcaption></figure>`).join('')}<div class="context-cites">${n.refs.map(ref=>`<a href="${esc(ref.url)}" target="_blank" rel="noopener noreferrer">${esc(ref.label)} ↗</a>`).join('')}</div></section>`;}
+  function noteHTML(n,original=false){if(n.html)return `<section class="context-note${n.title.length>80?' passage-note':''}" data-context-note="${esc(n.id)}"><h3>${n.titleHtml||esc(n.title)}</h3>${n.html}</section>`;return `<section class="context-note" data-context-note="${n.id}"><h3>${esc(n.title)}</h3><p>${esc(n.body)}</p>${original&&n.cipher?`<p>${esc(n.cipher)}</p>`:''}${n.images.filter(im=>original||!im.cipherOnly).map(im=>`<figure><a href="${asset(im.image)}" target="_blank" rel="noopener"><img src="${asset(im.image)}" alt="${esc(im.caption)}" loading="lazy"></a><figcaption>${esc(im.caption)}</figcaption></figure>`).join('')}<div class="context-cites">${n.refs.map(ref=>`<a href="${esc(ref.url)}" target="_blank" rel="noopener noreferrer">${esc(ref.label)} ↗</a>`).join('')}</div></section>`;}
   function symbolHTML(item){const {row:r,unit:u}=item,b=u.box;
     const sample=svg(r.folio,[Math.max(0,b[0]-8),b[1],b[2]+8,b[3]],'Selected original manuscript region');
     if(u.kind==='cipher'){
@@ -122,7 +125,8 @@
     if(tile&&!forceOpen){const above=tile.offsetTop-tile.parentElement.offsetTop,target=Math.max(before,$('.view-menu').offsetHeight+above+10);window.scrollBy(0,tile.getBoundingClientRect().top-target);}
     $('#status').textContent=`${w.text}: ${open.has(w.id)?'opened':'closed'}.`;
   }
-  function showNotes(ids,rows=[],trigger){const chosen=ids.map(id=>notes.find(n=>n.id===id)).filter(Boolean);if(!chosen.length)return;
+  function showNotes(ids,rows=[],trigger){const chosen=ids.map(id=>(view==='english'?englishNotes:notes).find(n=>n.id===id)).filter(Boolean);if(!chosen.length)return;
+    if(view==='english'){const r=idx.rows.get(rows[0]);openPanel(r?lineLabel(r):'Context',chosen.map(n=>noteHTML(n)).join(''),trigger);trigger?.classList.add('active');return;}
     const origins=chosen.flatMap(n=>(n.wordIds||[]).flatMap(id=>idx.words.get(id)?.rows||[]));
     const target=origins.find(id=>rows.includes(id))||origins[0]||chosen.flatMap(n=>n.targets).find(id=>rows.includes(id))||rows[0],r=idx.rows.get(target);openPanel(r?lineLabel(r):'Context',chosen.map(n=>noteHTML(n,false)).join('')+(r?sourceLink(r):''),trigger);trigger?.classList.add('active');
   }
@@ -161,8 +165,8 @@
   $('.tabs').addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const tabs=[...document.querySelectorAll('[data-view]')],i=tabs.indexOf(document.activeElement),next=e.key==='Home'?0:e.key==='End'?2:(i+(e.key==='ArrowLeft'?-1:1)+3)%3;setView(tabs[next].dataset.view);tabs[next].focus();});
   let resizeFrame;new ResizeObserver(()=>{hideMagnifier();cancelAnimationFrame(resizeFrame);resizeFrame=requestAnimationFrame(refreshReveals);}).observe(letter);
   async function load(name){const response=await fetch(name,{cache:'no-cache'});if(!response.ok)throw new Error(name+' '+response.status);return response.json();}
-  Promise.all([load('edition.json'),load('reader.json'),load('../reader-notes.json'),load('english-lines.json'),load('../word-signs.json')]).then(values=>{
-    [data,model,notes,english,wordSigns]=values;omittedUnits=new Set(notes.flatMap(n=>n.omittedUnits||[]));idx=core.index(data,model);englishMarkup=core.annotateEnglishLines(english.rows,notes);setView(new URL(location).searchParams.get('view')||'source');
+  Promise.all([load('edition.json'),load('reader.json'),load('../reader-notes.json'),load('english-lines.json'),load('../word-signs.json'),load('english-notes.json')]).then(values=>{
+    [data,model,notes,english,wordSigns,englishNotes]=values;omittedUnits=new Set(notes.flatMap(n=>n.omittedUnits||[]));idx=core.index(data,model);englishMarkup=core.annotateEnglishLines(english.rows,englishNotes);setView(new URL(location).searchParams.get('view')||'source');
     let anchor='';try{anchor=decodeURIComponent(location.hash.slice(1));}catch(e){}
     if(view==='source'&&idx.words.has(anchor)){const w=idx.words.get(anchor);selectUnit(w.units[0],true);document.getElementById(w.rows[0])?.scrollIntoView({block:'center'});}
     else if(idx.rows.has(anchor))document.getElementById(anchor)?.scrollIntoView({block:'center'});
